@@ -1,5 +1,5 @@
 blueprint:
-  name: Shelly switch events
+  name: Shelly Push events
   description: Control anything from shelly SW
   domain: automation
   input:
