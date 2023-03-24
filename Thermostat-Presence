@@ -1,0 +1,102 @@
+blueprint:
+  name: Thermostat-Steuerung
+  description: Setzt die Temperatur des Thermostats zu bestimmten Zeiten
+  domain: automation
+  input:
+    thermostat_entity_id:
+      name: Thermostat Entity-ID
+      description: Die Entity-ID des zu steuernden Thermostats
+      selector:
+        entity:
+          domain: climate
+    time_1:
+      name: Zeit 1
+      description: Die erste Zeit, zu der die Temperatur gesetzt werden soll
+      selector:
+        time:
+    temperature_1:
+      name: Temperatur 1
+      description: Die Temperatur, die zu Zeit 1 gesetzt werden soll
+      selector:
+        number:
+          min: 5
+          max: 35
+          step: 0.5
+    time_2:
+      name: Zeit 2
+      description: Die zweite Zeit, zu der die Temperatur gesetzt werden soll
+      selector:
+        time:
+    temperature_2:
+      name: Temperatur 2
+      description: Die Temperatur, die zu Zeit 2 gesetzt werden soll
+      selector:
+        number:
+          min: 5
+          max: 35
+          step: 0.5
+    time_3:
+      name: Zeit 3
+      description: Die dritte Zeit, zu der die Temperatur gesetzt werden soll
+      selector:
+        time:
+    temperature_3:
+      name: Temperatur 3
+      description: Die Temperatur, die zu Zeit 3 gesetzt werden soll
+      selector:
+        number:
+          min: 5
+          max: 35
+          step: 0.5
+    time_4:
+      name: Zeit 4
+      description: Die vierte Zeit, zu der die Temperatur gesetzt werden soll
+      selector:
+        time:
+    temperature_4:
+      name: Temperatur 4
+      description: Die Temperatur, die zu Zeit 4 gesetzt werden soll
+      selector:
+        number:
+          min: 5
+          max: 35
+          step: 0.5
+    presence_entity_id:
+      name: Anwesenheits-Entität
+      description: Die Entity-ID der zu prüfenden Anwesenheits-Entität
+      selector:
+        entity:
+          domain: device_tracker
+    min_temperature:
+      name: Mindesttemperatur
+      description: Die Temperatur, die eingestellt werden soll, wenn keine Anwesenheit erkannt wird
+      selector:
+        number:
+          min: 5
+          max: 35
+          step: 0.5
+
+mode: single
+max_exceeded: silent
+
+trigger:
+  - platform: time
+    minutes: "/1"
+    
+condition:
+  - condition: state
+    entity_id: "{{ input_boolean.presence_check_entity_id }}"
+    state: "on"
+
+action:
+  - choose:
+      - conditions:
+          - condition: state
+            entity_id: "{{ input_boolean.presence_entity_id }}"
+            state: "home"
+        sequence:
+          - service: climate.set_temperature
+            data_template:
+              entity_id: "{{ input_text.thermostat_entity_id }}"
+              temperature: >
+                {% if now().strftime('%H:%M') == states(input
