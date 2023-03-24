@@ -1,83 +1,89 @@
 blueprint:
-  name: Thermostatsteuerung mit Anwesenheitserkennung
-  description: Steuert das Thermostat basierend auf der Anwesenheit
+  name: Thermostat-Steuerung
+  description: Automatisierte Steuerung eines Thermostats basierend auf Anwesenheit und Zeit.
   domain: automation
   input:
-    thermostat_entity:
-      name: Thermostat-Entity
-      description: Das zu steuernde Thermostat
-      selector:
-        entity:
-          domain: climate
     presence_entity:
-      name: Präsenz-Entity
-      description: Die Entity, die den Anwesenheitsstatus enthält
+      name: Anwesenheits-Entity
+      description: Die Entity, die den Anwesenheitsstatus angibt.
       selector:
         entity:
           domain: device_tracker
+    thermostat_entity:
+      name: Thermostat-Entity
+      description: Die Entity, die das zu steuernde Thermostat darstellt.
+      selector:
+        entity:
+          domain: climate
     anwesenheit_1:
-      name: Anwesenheit 1
-      description: Erste Zeitspanne der Anwesenheit
+      name: Zeitpunkt des ersten Anwesenheitszeitraums
+      description: Zeitpunkt, ab dem der erste Anwesenheitszeitraum beginnt.
       selector:
         time: {}
     anwesenheit_temp_1:
-      name: Temperatur Anwesenheit 1
-      description: Gewünschte Temperatur für die erste Zeitspanne der Anwesenheit
+      name: Temperatur des ersten Anwesenheitszeitraums
+      description: Die gewünschte Temperatur während des ersten Anwesenheitszeitraums.
       selector:
         number:
           min: 5
-          max: 40
+          max: 30
           step: 0.5
+          unit_of_measurement: "°C"
     anwesenheit_2:
-      name: Anwesenheit 2
-      description: Zweite Zeitspanne der Anwesenheit
+      name: Zeitpunkt des zweiten Anwesenheitszeitraums
+      description: Zeitpunkt, ab dem der zweite Anwesenheitszeitraum beginnt.
       selector:
         time: {}
     anwesenheit_temp_2:
-      name: Temperatur Anwesenheit 2
-      description: Gewünschte Temperatur für die zweite Zeitspanne der Anwesenheit
+      name: Temperatur des zweiten Anwesenheitszeitraums
+      description: Die gewünschte Temperatur während des zweiten Anwesenheitszeitraums.
       selector:
         number:
           min: 5
-          max: 40
+          max: 30
           step: 0.5
+          unit_of_measurement: "°C"
     abwesenheit_temp:
-      name: Temperatur Abwesenheit
-      description: Gewünschte Temperatur während der Abwesenheit
+      name: Temperatur bei Abwesenheit
+      description: Die gewünschte Temperatur während der Abwesenheit.
       selector:
         number:
           min: 5
-          max: 40
+          max: 30
           step: 0.5
+          unit_of_measurement: "°C"
   trigger:
     platform: state
     entity_id: !input presence_entity
-    from: "not_home"
-    to: "home"
+    to: home
+  condition:
+    condition: state
+    entity_id: !input presence_entity
+    state: home
   action:
-  - choose:
-    - conditions:
-      - condition: time
-        after: !input anwesenheit_1
-        before: !input anwesenheit_2
-      sequence:
-      - service: climate.set_temperature
-        target:
-          entity_id: !input thermostat_entity
-        data:
-          temperature: !input anwesenheit_temp_1
-    - conditions:
-      - condition: time
-        after: !input anwesenheit_2
-      sequence:
-      - service: climate.set_temperature
-        target:
-          entity_id: !input thermostat_entity
-        data:
-          temperature: !input anwesenheit_temp_2
-    default:
-    - service: climate.set_temperature
-      target:
-        entity_id: !input thermostat_entity
-      data:
-        temperature: !input abwesenheit_temp
+    - choose:
+        - conditions:
+            - condition: time
+              after: !input anwesenheit_1
+              before: !input anwesenheit_2
+          sequence:
+            - service: climate.set_temperature
+              target:
+                entity_id: !input thermostat_entity
+              data:
+                temperature: !input anwesenheit_temp_1
+        - conditions:
+            - condition: time
+              after: !input anwesenheit_2
+          sequence:
+            - service: climate.set_temperature
+              target:
+                entity_id: !input thermostat_entity
+              data:
+                temperature: !input anwesenheit_temp_2
+        - sequence:
+            - service: climate.set_temperature
+              target:
+                entity_id: !input thermostat_entity
+              data:
+                temperature: !input abwesenheit
