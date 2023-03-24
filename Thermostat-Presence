@@ -1,6 +1,6 @@
 blueprint:
-  name: Thermostat-Steuerung mit Anwesenheitskontrolle
-  description: Steuert die Temperatur eines Thermostats basierend auf Anwesenheit und individuellen Zeitfenstern
+  name: Thermostat-Steuerung
+  description: Eine Automation, um das Thermostat basierend auf Anwesenheit und Zeit zu steuern.
   domain: automation
   input:
     anwesenheitstracker:
@@ -18,129 +18,111 @@ blueprint:
           domain: climate
 
     temperatur_zeit1:
-      name: Temperatur Zeitfenster 1
-      description: Die Temperatur für das erste Zeitfenster.
+      name: Temperaturzeit 1
+      description: Die erste Zeit, zu der die Temperatur geändert werden soll.
       selector:
-        number:
-          min: -10
-          max: 50
-          step: 0.1
-          unit_of_measurement: "°C"
-
-    zeit1:
-      name: Startzeit Zeitfenster 1
-      description: Startzeit des ersten Zeitfensters.
-      selector:
-        time: {}
+        time:
 
     temperatur_zeit2:
-      name: Temperatur Zeitfenster 2
-      description: Die Temperatur für das zweite Zeitfenster.
+      name: Temperaturzeit 2
+      description: Die zweite Zeit, zu der die Temperatur geändert werden soll.
       selector:
-        number:
-          min: -10
-          max: 50
-          step: 0.1
-          unit_of_measurement: "°C"
-
-    zeit2:
-      name: Startzeit Zeitfenster 2
-      description: Startzeit des zweiten Zeitfensters.
-      selector:
-        time: {}
+        time:
 
     temperatur_zeit3:
-      name: Temperatur Zeitfenster 3
-      description: Die Temperatur für das dritte Zeitfenster.
+      name: Temperaturzeit 3
+      description: Die dritte Zeit, zu der die Temperatur geändert werden soll.
       selector:
-        number:
-          min: -10
-          max: 50
-          step: 0.1
-          unit_of_measurement: "°C"
-
-    zeit3:
-      name: Startzeit Zeitfenster 3
-      description: Startzeit des dritten Zeitfensters.
-      selector:
-        time: {}
+        time:
 
     temperatur_zeit4:
-      name: Temperatur Zeitfenster 4
-      description: Die Temperatur für das vierte Zeitfenster.
+      name: Temperaturzeit 4
+      description: Die vierte Zeit, zu der die Temperatur geändert werden soll.
+      selector:
+        time:
+
+    temperatur_anwesenheit:
+      name: Temperatur bei Anwesenheit
+      description: Die Temperatur, die bei Anwesenheit zu den festgelegten Zeitpunkten gesetzt werden soll.
       selector:
         number:
-          min: -10
-          max: 50
-          step: 0.1
+          min: 0
+          max: 30
+          step: 0.5
           unit_of_measurement: "°C"
 
-    zeit4:
-      name: Startzeit Zeitfenster 4
-      description: Startzeit des vierten Zeitfensters.
+    temperatur_abwesenheit:
+      name: Temperatur bei Abwesenheit
+      description: Die Temperatur, die bei Abwesenheit gesetzt werden soll.
       selector:
-        time: {}
+        number:
+          min: 0
+          max: 30
+          step: 0.5
+          unit_of_measurement: "°C"
 
-
-mode: restart
-max_exceeded: silent
-
-trigger:
-  - platform: time
-    minutes: "/1"
-
-variables:
-  entity_id: !input "entity_id"
-  temperatur_abwesend: !input "temperatur_abwesend"
-
+  trigger:
+    platform: state
+    entity_id: !input 'anwesenheitstracker'
+    from: 'not_home'
+    to: 'home'
+    
   action:
   - choose:
-    # Wenn Abwesenheitstracker auslöst
-    - conditions:
-      - condition: state
-        entity_id: !input 'anwesenheitstracker'
-        state: 'not_home'
-      sequence:
-      - service: climate.set_temperature
-        data:
-          entity_id: !input 'climate_entity_id'
-          temperature: !input 'temperatur_abwesenheit'
-    # Wenn Anwesenheitstracker auslöst
-    - conditions:
-      - condition: state
-        entity_id: !input 'anwesenheitstracker'
-        state: 'home'
-      sequence:
-      - choose:
-          # Wenn aktuelle Zeit innerhalb des Zeitfensters liegt
-          - conditions: "{{ now().strftime('%H:%M') >= state_attr(input_datetime.zeit1, 'timestamp') and now().strftime('%H:%M') < state_attr(input_datetime.zeit2, 'timestamp') }}"
-            sequence:
-            - service: climate.set_temperature
-              data:
-                entity_id: !input 'climate_entity_id'
-                temperature: !input 'temperatur_zeit1'
-          - conditions: "{{ now().strftime('%H:%M') >= state_attr(input_datetime.zeit2, 'timestamp') and now().strftime('%H:%M') < state_attr(input_datetime.zeit3, 'timestamp') }}"
-            sequence:
-            - service: climate.set_temperature
-              data:
-                entity_id: !input 'climate_entity_id'
-                temperature: !input 'temperatur_zeit2'
-          - conditions: "{{ now().strftime('%H:%M') >= state_attr(input_datetime.zeit3, 'timestamp') and now().strftime('%H:%M') < state_attr(input_datetime.zeit4, 'timestamp') }}"
-            sequence:
-            - service: climate.set_temperature
-              data:
-                entity_id: !input 'climate_entity_id'
-                temperature: !input 'temperatur_zeit3'
-          # Wenn aktuelle Zeit außerhalb der Zeitfenster liegt
-          - conditions: "{{ now().strftime('%H:%M') < state_attr(input_datetime.zeit1, 'timestamp') }}"
-            sequence:
-            - service: climate.set_temperature
-              data:
-                entity_id: !input 'climate_entity_id'
-                temperature: !input 'temperatur_zeit4'
-          - conditions: "{{ now().strftime('%H:%M') >= state_attr(input_datetime.zeit4, 'timestamp') }}"
-            sequence:
-            - service: climate.set_temperature
-              data:
-                entity_id: !input 'climate_entity_id'
-                temperature: !input 'temperatur_zeit4'
+      # Anwesenheit
+      - conditions:
+          - condition: state
+            entity_id: !input anwesenheitstracker
+            state: "home"
+        sequence:
+          - choose:
+              # Temperatur Zeit 1
+              - conditions:
+                  - condition: time
+                    after: !input temperatur_zeit1
+                    before: !input temperatur_zeit2
+                sequence:
+                  - service: climate.set_temperature
+                    target:
+                      entity_id: !input climate_entity_id
+                    data:
+                      temperature: !input temperatur_zeit1_temp
+              # Temperatur Zeit 2
+              - conditions:
+                  - condition: time
+                    after: !input temperatur_zeit2
+                    before: !input temperatur_zeit3
+                sequence:
+                  - service: climate.set_temperature
+                    target:
+                      entity_id: !input climate_entity_id
+                    data:
+                      temperature: !input temperatur_zeit2_temp
+              # Temperatur Zeit 3
+              - conditions:
+                  - condition: time
+                    after: !input temperatur_zeit3
+                    before: !input temperatur_zeit4
+                sequence:
+                  - service: climate.set_temperature
+                    target:
+                      entity_id: !input climate_entity_id
+                    data:
+                      temperature: !input temperatur_zeit3_temp
+              # Temperatur Zeit 4
+              - conditions:
+                  - condition: time
+                    after: !input temperatur_zeit4
+                sequence:
+                  - service: climate.set_temperature
+                    target:
+                      entity_id: !input climate_entity_id
+                    data:
+                      temperature: !input temperatur_zeit4_temp
+          # Abwesenheit
+          - sequence:
+              - service: climate.set_temperature
+                target:
+                  entity_id: !input climate_entity_id
+                data:
+                  temperature: !input temperatur_abwesenheit
