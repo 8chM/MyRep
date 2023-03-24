@@ -3,6 +3,12 @@ blueprint:
   description: Setzt die Temperatur des Thermostats zu bestimmten Zeiten
   domain: automation
   input:
+    thermostat_entity_id:
+      name: Thermostat Entity-ID
+      description: Die Entity-ID des zu steuernden Thermostats
+      selector:
+        entity:
+          domain: climate
     time_1:
       name: Zeit 1
       description: Die erste Zeit, zu der die Temperatur gesetzt werden soll
@@ -66,7 +72,7 @@ trigger:
 action:
   - service: climate.set_temperature
     data_template:
-      entity_id: climate.thermostat
+      entity_id: "{{ input_text.thermostat_entity_id }}"
       temperature: >
         {% if now().strftime('%H:%M') == states(input_datetime.time_1.state) %}
           {{ states('input_number.temperature_1') }}
