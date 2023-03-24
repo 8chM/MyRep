@@ -1,79 +1,43 @@
 blueprint:
-  name: Thermostat Zeitplan
-  description: Eine Automatisierung, um das Thermostat zu bestimmten Zeiten anzupassen.
-
+  name: Thermostat-Präsenz
+  description: >
+    Dieses Blueprint passt die Temperatur des Thermostats entsprechend der Anwesenheit des Benutzers an und berücksichtigt dabei die eingestellten Zeiten.
   domain: automation
   input:
+    presence_entity:
+      name: Anwesenheits-Entity
+      description: Die Entity-ID der Anwesenheit
+      selector:
+        entity:
+          domain: device_tracker
     thermostat_entity:
-      name: Thermostat Entity
+      name: Thermostat-Entity
       description: Die Entity-ID des Thermostats
       selector:
         entity:
           domain: climate
-    temp_day:
-      name: Tagtemperatur
-      description: Die Temperatur, auf die das Thermostat während des Tages eingestellt wird
-      selector:
-        number:
-          min: 5
-          max: 40
-          step: 0.1
-          unit_of_measurement: "°C"
-    temp_night:
-      name: Nachttemperatur
-      description: Die Temperatur, auf die das Thermostat während der Nacht eingestellt wird
-      selector:
-        number:
-          min: 5
-          max: 40
-          step: 0.1
-          unit_of_measurement: "°C"
-    presence_entity:
-      name: Anwesenheits-Entity
-      description: Die Entity-ID der Entität, die überprüft wird, ob jemand zu Hause ist
+    input_boolean:
+      name: Prüfung auf Anwesenheit
+      description: Eine Input-Boolean-Entität, die zur Überprüfung der Anwesenheit verwendet wird.
       selector:
         entity:
-          domain: device_tracker
-    presence_check:
-      name: Anwesenheitsprüfung aktivieren
-      description: Soll die Anwesenheitsüberprüfung aktiviert werden?
-      default: false
-      selector:
-        boolean: {}
-    min_temp:
-      name: Mindesttemperatur
-      description: Die Mindesttemperatur, auf die das Thermostat eingestellt wird, wenn niemand zu Hause ist.
-      default: 15
+          domain: input_boolean
+    temp_day:
+      name: Tagtemperatur
+      description: Die Temperatur, auf die der Thermostat bei Anwesenheit während des Tages eingestellt werden soll.
       selector:
         number:
           min: 5
           max: 40
-          step: 0.1
-          unit_of_measurement: "°C"
-    time_1:
-      name: Zeit 1
-      description: Die erste Zeit, zu der das Thermostat eingestellt wird
+          step: 0.5
+    temp_night:
+      name: Nachtemperatur
+      description: Die Temperatur, auf die der Thermostat bei Abwesenheit während der Nacht eingestellt werden soll.
       selector:
-        time: {}
-    time_2:
-      name: Zeit 2
-      description: Die zweite Zeit, zu der das Thermostat eingestellt wird
-      selector:
-        time: {}
-    time_3:
-      name: Zeit 3
-      description: Die dritte Zeit, zu der das Thermostat eingestellt wird
-      selector:
-        time: {}
-    time_4:
-      name: Zeit 4
-      description: Die vierte Zeit, zu der das Thermostat eingestellt wird
-      selector:
-        time: {}
-
-  mode: restart
-  max_exceeded: silent
-
+        number:
+          min: 5
+          max: 40
+          step: 0.5
   trigger:
     platform: time
     at:
@@ -81,12 +45,10 @@ blueprint:
     - input_datetime.thermostat_time_2
     - input_datetime.thermostat_time_3
     - input_datetime.thermostat_time_4
-
   condition:
   - condition: state
     entity_id: "{{ input_boolean.presence_check }}"
     state: "on"
-
   action:
   - choose:
     - conditions:
@@ -103,4 +65,9 @@ blueprint:
         entity_id: "{{ presence_entity }}"
         state: "not_home"
       sequence:
-      - service: climate.set
+      - service: climate.set_temperature
+        data:
+          entity_id: "{{ thermostat_entity }}"
+          temperature: "{{ temp_night }}"
+  mode: single
+  max_exceeded: silent
