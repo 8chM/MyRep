@@ -57,9 +57,9 @@ blueprint:
     entity_id: !input presence_entity
     to: home
   condition:
-    condition: state
-    entity_id: !input presence_entity
-    state: home
+    - condition: state
+      entity_id: !input presence_entity
+      state: home
   action:
     - choose:
         - conditions:
@@ -86,4 +86,4 @@ blueprint:
               target:
                 entity_id: !input thermostat_entity
               data:
-                temperature: !input abwesenheit
+                temperature: !input abwesenheit_temp
