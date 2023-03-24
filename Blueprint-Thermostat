@@ -1,20 +1,79 @@
-alias: Thermostat-Steuerung
-description: Setzt die Temperatur des Thermostats zu bestimmten Zeiten
+blueprint:
+  name: Thermostat-Steuerung
+  description: Setzt die Temperatur des Thermostats zu bestimmten Zeiten
+  domain: automation
+  input:
+    time_1:
+      name: Zeit 1
+      description: Die erste Zeit, zu der die Temperatur gesetzt werden soll
+      selector:
+        time:
+    temperature_1:
+      name: Temperatur 1
+      description: Die Temperatur, die zu Zeit 1 gesetzt werden soll
+      selector:
+        number:
+          min: 5
+          max: 35
+          step: 0.5
+    time_2:
+      name: Zeit 2
+      description: Die zweite Zeit, zu der die Temperatur gesetzt werden soll
+      selector:
+        time:
+    temperature_2:
+      name: Temperatur 2
+      description: Die Temperatur, die zu Zeit 2 gesetzt werden soll
+      selector:
+        number:
+          min: 5
+          max: 35
+          step: 0.5
+    time_3:
+      name: Zeit 3
+      description: Die dritte Zeit, zu der die Temperatur gesetzt werden soll
+      selector:
+        time:
+    temperature_3:
+      name: Temperatur 3
+      description: Die Temperatur, die zu Zeit 3 gesetzt werden soll
+      selector:
+        number:
+          min: 5
+          max: 35
+          step: 0.5
+    time_4:
+      name: Zeit 4
+      description: Die vierte Zeit, zu der die Temperatur gesetzt werden soll
+      selector:
+        time:
+    temperature_4:
+      name: Temperatur 4
+      description: Die Temperatur, die zu Zeit 4 gesetzt werden soll
+      selector:
+        number:
+          min: 5
+          max: 35
+          step: 0.5
+
+mode: single
+max_exceeded: silent
+
 trigger:
-- platform: time
-  minutes: "/1"
-condition: []
+  - platform: time
+    minutes: "/1"
+    
 action:
-- service: climate.set_temperature
-  data_template:
-    entity_id: climate.thermostat
-    temperature: >
-      {% if now().strftime('%H:%M') == states('input_datetime.time_1') %}
-        {{ states('input_number.temperature_1') }}
-      {% elif now().strftime('%H:%M') == states('input_datetime.time_2') %}
-        {{ states('input_number.temperature_2') }}
-      {% elif now().strftime('%H:%M') == states('input_datetime.time_3') %}
-        {{ states('input_number.temperature_3') }}
-      {% elif now().strftime('%H:%M') == states('input_datetime.time_4') %}
-        {{ states('input_number.temperature_4') }}
-      {% endif %}
+  - service: climate.set_temperature
+    data_template:
+      entity_id: climate.thermostat
+      temperature: >
+        {% if now().strftime('%H:%M') == states(input_datetime.time_1.state) %}
+          {{ states('input_number.temperature_1') }}
+        {% elif now().strftime('%H:%M') == states(input_datetime.time_2.state) %}
+          {{ states('input_number.temperature_2') }}
+        {% elif now().strftime('%H:%M') == states(input_datetime.time_3.state) %}
+          {{ states('input_number.temperature_3') }}
+        {% elif now().strftime('%H:%M') == states(input_datetime.time_4.state) %}
+          {{ states('input_number.temperature_4') }}
+        {% endif %}
