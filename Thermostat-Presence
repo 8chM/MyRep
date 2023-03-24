@@ -84,6 +84,3 @@ blueprint:
         - sequence:
             - service: climate.set_temperature
               target:
-                entity_id: !input thermostat_entity
-              data:
-                temperature: !input abwesenheit_temp
