@@ -1,73 +1,102 @@
 blueprint:
-  name: Thermostat-Präsenz
-  description: >
-    Dieses Blueprint passt die Temperatur des Thermostats entsprechend der Anwesenheit des Benutzers an und berücksichtigt dabei die eingestellten Zeiten.
+  name: Thermostat-Präsenzsteuerung
+  description: Dieser Blueprint steuert ein Thermostat basierend auf der Anwesenheit von Personen und den Tageszeiten.
   domain: automation
   input:
     presence_entity:
-      name: Anwesenheits-Entity
-      description: Die Entity-ID der Anwesenheit
+      name: Präsenz-Entity
+      description: Die Entity-ID der Präsenz-Entität.
       selector:
         entity:
           domain: device_tracker
     thermostat_entity:
       name: Thermostat-Entity
-      description: Die Entity-ID des Thermostats
+      description: Die Entity-ID des Thermostats.
       selector:
         entity:
           domain: climate
-    input_boolean:
-      name: Prüfung auf Anwesenheit
-      description: Eine Input-Boolean-Entität, die zur Überprüfung der Anwesenheit verwendet wird.
+    temp_day:
+      name: Temperatur am Tag
+      description: Die Temperatur, die während des Tages eingestellt werden soll.
+      selector:
+        number:
+          min: 5
+          max: 40
+          step: 0.5
+          unit_of_measurement: °C
+    temp_night:
+      name: Temperatur in der Nacht
+      description: Die Temperatur, die während der Nacht eingestellt werden soll.
+      selector:
+        number:
+          min: 5
+          max: 40
+          step: 0.5
+          unit_of_measurement: °C
+    temp_away:
+      name: Temperatur im Abwesenheitsmodus
+      description: Die Temperatur, die eingestellt werden soll, wenn niemand zu Hause ist.
+      selector:
+        number:
+          min: 5
+          max: 40
+          step: 0.5
+          unit_of_measurement: °C
+    presence_check:
+      name: Präsenz-Check-Entity
+      description: Die Entity-ID des Präsenz-Check-Boolschen.
       selector:
         entity:
           domain: input_boolean
-    temp_day:
-      name: Tagtemperatur
-      description: Die Temperatur, auf die der Thermostat bei Anwesenheit während des Tages eingestellt werden soll.
+    time_1:
+      name: Zeit 1
+      description: Die erste Zeit, zu der das Thermostat aktiviert werden soll.
       selector:
-        number:
-          min: 5
-          max: 40
-          step: 0.5
-    temp_night:
-      name: Nachtemperatur
-      description: Die Temperatur, auf die der Thermostat bei Abwesenheit während der Nacht eingestellt werden soll.
+        time: {}
+    time_2:
+      name: Zeit 2
+      description: Die zweite Zeit, zu der das Thermostat aktiviert werden soll.
       selector:
-        number:
-          min: 5
-          max: 40
-          step: 0.5
-  trigger:
-    platform: time
+        time: {}
+    time_3:
+      name: Zeit 3
+      description: Die dritte Zeit, zu der das Thermostat aktiviert werden soll.
+      selector:
+        time: {}
+    time_4:
+      name: Zeit 4
+      description: Die vierte Zeit, zu der das Thermostat aktiviert werden soll.
+      selector:
+        time: {}
+
+mode: restart
+max_exceeded: silent
+
+trigger:
+  - platform: time
     at:
-    - input_datetime.thermostat_time_1
-    - input_datetime.thermostat_time_2
-    - input_datetime.thermostat_time_3
-    - input_datetime.thermostat_time_4
-  condition:
-  - condition: state
-    entity_id: "{{ input_boolean.presence_check }}"
-    state: "on"
-  action:
+      - input_datetime.thermostat_time_1
+      - input_datetime.thermostat_time_2
+      - input_datetime.thermostat_time_3
+      - input_datetime.thermostat_time_4
+
+action:
   - choose:
-    - conditions:
-      - condition: state
-        entity_id: "{{ presence_entity }}"
-        state: "home"
-      sequence:
-      - service: climate.set_temperature
-        data:
-          entity_id: "{{ thermostat_entity }}"
-          temperature: "{{ temp_day }}"
-    - conditions:
-      - condition: state
-        entity_id: "{{ presence_entity }}"
-        state: "not_home"
-      sequence:
-      - service: climate.set_temperature
-        data:
-          entity_id: "{{ thermostat_entity }}"
-          temperature: "{{ temp_night }}"
-  mode: single
-  max_exceeded: silent
+      - conditions: "{{ is_state(presence_entity, 'home') }}"
+        sequence:
+          - service: climate.set_temperature
+            data:
+              entity_id: "{{ thermostat_entity }}"
+              temperature: "{{ temp_day }}"
+      - conditions: "{{ is_state(presence_entity, 'not_home') }}"
+        sequence:
+          - service: climate.set_temperature
+            data:
+              entity_id: "{{ thermostat_entity }}"
+              temperature: "{{ temp_away }}"
+      - conditions: "{{ is_state(presence_check, 'on') }}"
+        sequence:
+          - choose:
+              - conditions: "{{ now().strftime('%H:%M') < state_attr('input_datetime.thermostat_time_1', 'time') }}"
+                sequence:
+                  - service: climate.set_temperature
