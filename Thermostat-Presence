@@ -1,6 +1,6 @@
 blueprint:
-  name: Thermostat-Steuerung mit Präsenzerkennung
-  description: Automatische Steuerung des Thermostats basierend auf Präsenzerkennung und Außentemperatur
+  name: Thermostat-Steuerung
+  description: Steuert das Thermostat basierend auf Anwesenheit und Temperaturvorgaben
   domain: automation
   input:
     thermostat_entity:
@@ -11,66 +11,77 @@ blueprint:
           domain: climate
     presence_entity:
       name: Präsenz-Entity
-      description: Die Entity zur Erkennung der Präsenz
+      description: Die Entity, die den Anwesenheitsstatus des Benutzers anzeigt
       selector:
         entity:
           domain: device_tracker
-    max_temp:
-      name: Maximale Temperatur
-      description: Die maximale zulässige Temperatur für das Thermostat
-      default: 25
+    temperature_home:
+      name: Temperatur zuhause
+      description: Die Temperatur, die eingestellt wird, wenn der Benutzer anwesend ist
       selector:
         number:
-          min: 0
+          min: 5
           max: 35
           step: 0.1
-          mode: slider
-    min_temp:
-      name: Minimale Temperatur
-      description: Die minimale zulässige Temperatur für das Thermostat
-      default: 15
+          unit_of_measurement: "°C"
+    temperature_away:
+      name: Temperatur abwesend
+      description: Die Temperatur, die eingestellt wird, wenn der Benutzer abwesend ist
       selector:
         number:
-          min: 0
+          min: 5
           max: 35
           step: 0.1
-          mode: slider
-  source_url: https://github.com/8chM/MyRep/blob/main/Thermostat-Presence.yaml
-trigger:
-  - platform: state
-    entity_id: !input presence_entity
-action:
-  - choose:
-      - conditions:
-          - condition: state
-            entity_id: !input presence_entity
-            state: "home"
-        sequence:
-          - service: climate.set_temperature
-            target:
-              entity_id: !input thermostat_entity
-            data:
-              temperature: "{{ states('sensor.outdoor_temperature') | float | round(1) }}"
-      - conditions:
-          - condition: state
-            entity_id: !input presence_entity
-            state: "not_home"
-        sequence:
-          - service: climate.set_temperature
-            target:
-              entity_id: !input thermostat_entity
-            data:
-              temperature: "{{ states('sensor.outdoor_temperature') | float | round(1) - 1 }}"
-    default:
-      - service: climate.set_temperature
-        target:
-          entity_id: !input thermostat_entity
-        data:
-          temperature: "{{ states('sensor.outdoor_temperature') | float | round(1) }}"
-condition:
-  - condition: state
-    entity_id: !input presence_check_entity
-    state: "home"
-max_exceeded:
-  - silent
-mode: single
+          unit_of_measurement: "°C"
+    time_home_1:
+      name: Zeit 1 zuhause
+      description: Die erste Zeit, zu der der Benutzer anwesend ist
+      selector:
+        time: {}
+    temperature_home_1:
+      name: Temperatur 1 zuhause
+      description: Die Temperatur, die eingestellt wird, wenn der Benutzer zu Zeit 1 anwesend ist
+      selector:
+        number:
+          min: 5
+          max: 35
+          step: 0.1
+          unit_of_measurement: "°C"
+    time_home_2:
+      name: Zeit 2 zuhause
+      description: Die zweite Zeit, zu der der Benutzer anwesend ist
+      selector:
+        time: {}
+    temperature_home_2:
+      name: Temperatur 2 zuhause
+      description: Die Temperatur, die eingestellt wird, wenn der Benutzer zu Zeit 2 anwesend ist
+      selector:
+        number:
+          min: 5
+          max: 35
+          step: 0.1
+          unit_of_measurement: "°C"
+    time_home_3:
+      name: Zeit 3 zuhause
+      description: Die dritte Zeit, zu der der Benutzer anwesend ist
+      selector:
+        time: {}
+    temperature_home_3:
+      name: Temperatur 3 zuhause
+      description: Die Temperatur, die eingestellt wird, wenn der Benutzer zu Zeit 3 anwesend ist
+      selector:
+        number:
+          min: 5
+          max: 35
+          step: 0.1
+          unit_of_measurement: "°C"
+    presence_check_entity:
+      name: Präsenz-Check-Entity
+      description: Die Entity, die überprüft, ob der Benutzer anwesend ist, wenn keine Präsenz-Updates empfangen werden
+      default: "input_boolean.thermostat_presence_check"
+      selector:
+        entity:
+          domain: input_boolean
+    max_temp_home:
+      name: Maximale Temperatur zuhause
+      description: Die maximale Temperatur, die eingestellt wird, wenn der Benutzer anwesend ist
