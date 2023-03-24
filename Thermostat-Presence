@@ -92,8 +92,8 @@ action:
   - choose:
       - conditions:
           - condition: state
-            entity_id: "{{ input_boolean.presence_entity_id }}"
-            state: "home"
+            entity_id: {{ input_boolean.presence_check }}
+            state: "on"
         sequence:
           - service: climate.set_temperature
             data_template:
