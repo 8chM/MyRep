@@ -1,102 +1,76 @@
 blueprint:
-  name: Thermostat-Präsenzsteuerung
-  description: Dieser Blueprint steuert ein Thermostat basierend auf der Anwesenheit von Personen und den Tageszeiten.
+  name: Thermostat-Steuerung mit Präsenzerkennung
+  description: Automatische Steuerung des Thermostats basierend auf Präsenzerkennung und Außentemperatur
   domain: automation
   input:
-    presence_entity:
-      name: Präsenz-Entity
-      description: Die Entity-ID der Präsenz-Entität.
-      selector:
-        entity:
-          domain: device_tracker
     thermostat_entity:
-      name: Thermostat-Entity
-      description: Die Entity-ID des Thermostats.
+      name: Thermostat
+      description: Das zu steuernde Thermostat
       selector:
         entity:
           domain: climate
-    temp_day:
-      name: Temperatur am Tag
-      description: Die Temperatur, die während des Tages eingestellt werden soll.
-      selector:
-        number:
-          min: 5
-          max: 40
-          step: 0.5
-          unit_of_measurement: °C
-    temp_night:
-      name: Temperatur in der Nacht
-      description: Die Temperatur, die während der Nacht eingestellt werden soll.
-      selector:
-        number:
-          min: 5
-          max: 40
-          step: 0.5
-          unit_of_measurement: °C
-    temp_away:
-      name: Temperatur im Abwesenheitsmodus
-      description: Die Temperatur, die eingestellt werden soll, wenn niemand zu Hause ist.
-      selector:
-        number:
-          min: 5
-          max: 40
-          step: 0.5
-          unit_of_measurement: °C
-    presence_check:
-      name: Präsenz-Check-Entity
-      description: Die Entity-ID des Präsenz-Check-Boolschen.
+    presence_entity:
+      name: Präsenz-Entity
+      description: Die Entity zur Erkennung der Präsenz
       selector:
         entity:
-          domain: input_boolean
-    time_1:
-      name: Zeit 1
-      description: Die erste Zeit, zu der das Thermostat aktiviert werden soll.
+          domain: device_tracker
+    max_temp:
+      name: Maximale Temperatur
+      description: Die maximale zulässige Temperatur für das Thermostat
+      default: 25
       selector:
-        time: {}
-    time_2:
-      name: Zeit 2
-      description: Die zweite Zeit, zu der das Thermostat aktiviert werden soll.
+        number:
+          min: 0
+          max: 35
+          step: 0.1
+          mode: slider
+    min_temp:
+      name: Minimale Temperatur
+      description: Die minimale zulässige Temperatur für das Thermostat
+      default: 15
       selector:
-        time: {}
-    time_3:
-      name: Zeit 3
-      description: Die dritte Zeit, zu der das Thermostat aktiviert werden soll.
-      selector:
-        time: {}
-    time_4:
-      name: Zeit 4
-      description: Die vierte Zeit, zu der das Thermostat aktiviert werden soll.
-      selector:
-        time: {}
-
-mode: restart
-max_exceeded: silent
-
+        number:
+          min: 0
+          max: 35
+          step: 0.1
+          mode: slider
+  source_url: https://github.com/8chM/MyRep/blob/main/Thermostat-Presence.yaml
 trigger:
-  - platform: time
-    at:
-      - input_datetime.thermostat_time_1
-      - input_datetime.thermostat_time_2
-      - input_datetime.thermostat_time_3
-      - input_datetime.thermostat_time_4
-
+  - platform: state
+    entity_id: !input presence_entity
 action:
   - choose:
-      - conditions: "{{ is_state(presence_entity, 'home') }}"
+      - conditions:
+          - condition: state
+            entity_id: !input presence_entity
+            state: "home"
         sequence:
           - service: climate.set_temperature
+            target:
+              entity_id: !input thermostat_entity
             data:
-              entity_id: "{{ thermostat_entity }}"
-              temperature: "{{ temp_day }}"
-      - conditions: "{{ is_state(presence_entity, 'not_home') }}"
+              temperature: "{{ states('sensor.outdoor_temperature') | float | round(1) }}"
+      - conditions:
+          - condition: state
+            entity_id: !input presence_entity
+            state: "not_home"
         sequence:
           - service: climate.set_temperature
+            target:
+              entity_id: !input thermostat_entity
             data:
-              entity_id: "{{ thermostat_entity }}"
-              temperature: "{{ temp_away }}"
-      - conditions: "{{ is_state(presence_check, 'on') }}"
-        sequence:
-          - choose:
-              - conditions: "{{ now().strftime('%H:%M') < state_attr('input_datetime.thermostat_time_1', 'time') }}"
-                sequence:
-                  - service: climate.set_temperature
+              temperature: "{{ states('sensor.outdoor_temperature') | float | round(1) - 1 }}"
+    default:
+      - service: climate.set_temperature
+        target:
+          entity_id: !input thermostat_entity
+        data:
+          temperature: "{{ states('sensor.outdoor_temperature') | float | round(1) }}"
+condition:
+  - condition: state
+    entity_id: !input presence_check_entity
+    state: "home"
+max_exceeded:
+  - silent
+mode: single
