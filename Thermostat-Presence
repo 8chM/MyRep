@@ -2,8 +2,7 @@ blueprint:
   name: Thermostat-Steuerung mit Anwesenheitskontrolle
   description: Steuert die Temperatur eines Thermostats basierend auf Anwesenheit und individuellen Zeitfenstern
   domain: automation
- 
- input:
+  input:
     anwesenheitstracker:
       name: Anwesenheitstracker
       description: Die Entity-ID des Anwesenheitstrackers.
