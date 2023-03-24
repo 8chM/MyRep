@@ -2,84 +2,86 @@ blueprint:
   name: Thermostat-Steuerung mit Anwesenheitskontrolle
   description: Steuert die Temperatur eines Thermostats basierend auf Anwesenheit und individuellen Zeitfenstern
   domain: automation
-  input:
-    anwesenheit:
-      name: Anwesenheits-Tracker
-      description: Entity-ID des Trackers für Anwesenheitserkennung
+ 
+ input:
+    anwesenheitstracker:
+      name: Anwesenheitstracker
+      description: Die Entity-ID des Anwesenheitstrackers.
       selector:
         entity:
           domain: device_tracker
-    entity_id:
-      name: Thermostat
-      description: Entity-ID des Thermostats
+
+    climate_entity_id:
+      name: Thermostat-Entity
+      description: Die Entity-ID des zu steuernden Thermostats.
       selector:
         entity:
           domain: climate
-    temperatur1:
-      name: Temperatur 1
-      description: Temperatur für das erste Zeitfenster
+
+    temperatur_zeit1:
+      name: Temperatur Zeitfenster 1
+      description: Die Temperatur für das erste Zeitfenster.
       selector:
         number:
-          min: 5
-          max: 40
-          step: 0.5
+          min: -10
+          max: 50
+          step: 0.1
           unit_of_measurement: "°C"
+
     zeit1:
-      name: Startzeit 1
-      description: Startzeit für das erste Zeitfenster (im Format hh:mm)
+      name: Startzeit Zeitfenster 1
+      description: Startzeit des ersten Zeitfensters.
       selector:
         time: {}
-    temperatur2:
-      name: Temperatur 2
-      description: Temperatur für das zweite Zeitfenster
+
+    temperatur_zeit2:
+      name: Temperatur Zeitfenster 2
+      description: Die Temperatur für das zweite Zeitfenster.
       selector:
         number:
-          min: 5
-          max: 40
-          step: 0.5
+          min: -10
+          max: 50
+          step: 0.1
           unit_of_measurement: "°C"
+
     zeit2:
-      name: Startzeit 2
-      description: Startzeit für das zweite Zeitfenster (im Format hh:mm)
+      name: Startzeit Zeitfenster 2
+      description: Startzeit des zweiten Zeitfensters.
       selector:
         time: {}
-    temperatur3:
-      name: Temperatur 3
-      description: Temperatur für das dritte Zeitfenster
+
+    temperatur_zeit3:
+      name: Temperatur Zeitfenster 3
+      description: Die Temperatur für das dritte Zeitfenster.
       selector:
         number:
-          min: 5
-          max: 40
-          step: 0.5
+          min: -10
+          max: 50
+          step: 0.1
           unit_of_measurement: "°C"
+
     zeit3:
-      name: Startzeit 3
-      description: Startzeit für das dritte Zeitfenster (im Format hh:mm)
+      name: Startzeit Zeitfenster 3
+      description: Startzeit des dritten Zeitfensters.
       selector:
         time: {}
-    temperatur4:
-      name: Temperatur 4
-      description: Temperatur für das vierte Zeitfenster
+
+    temperatur_zeit4:
+      name: Temperatur Zeitfenster 4
+      description: Die Temperatur für das vierte Zeitfenster.
       selector:
         number:
-          min: 5
-          max: 40
-          step: 0.5
+          min: -10
+          max: 50
+          step: 0.1
           unit_of_measurement: "°C"
+
     zeit4:
-      name: Startzeit 4
-      description: Startzeit für das vierte Zeitfenster (im Format hh:mm)
+      name: Startzeit Zeitfenster 4
+      description: Startzeit des vierten Zeitfensters.
       selector:
         time: {}
-    temperatur_abwesend:
-      name: Temperatur bei Abwesenheit
-      description: Temperatur, die während der Abwesenheit eingestellt werden soll
-      selector:
-        number:
-          min: 5
-          max: 40
-          step: 0.5
-          unit_of_measurement: "°C"
+
 
 mode: restart
 max_exceeded: silent
