@@ -1,128 +1,99 @@
 blueprint:
   name: Thermostat-Steuerung
-  description: Eine Automation, um das Thermostat basierend auf Anwesenheit und Zeit zu steuern.
+  description: Eine Automatisierung zur Steuerung von Thermostaten
   domain: automation
   input:
     anwesenheitstracker:
       name: Anwesenheitstracker
-      description: Die Entity-ID des Anwesenheitstrackers.
+      description: Entity-ID des Anwesenheitstrackers
       selector:
         entity:
           domain: device_tracker
-
-    climate_entity_id:
-      name: Thermostat-Entity
-      description: Die Entity-ID des zu steuernden Thermostats.
-      selector:
-        entity:
-          domain: climate
-
-    temperatur_zeit1:
-      name: Temperaturzeit 1
-      description: Die erste Zeit, zu der die Temperatur geändert werden soll.
+    zeit1:
+      name: Zeit 1
+      description: Zeitpunkt, zu dem eine individuelle Temperatur gesetzt werden soll
       selector:
         time:
-
-    temperatur_zeit2:
-      name: Temperaturzeit 2
-      description: Die zweite Zeit, zu der die Temperatur geändert werden soll.
-      selector:
-        time:
-
-    temperatur_zeit3:
-      name: Temperaturzeit 3
-      description: Die dritte Zeit, zu der die Temperatur geändert werden soll.
-      selector:
-        time:
-
-    temperatur_zeit4:
-      name: Temperaturzeit 4
-      description: Die vierte Zeit, zu der die Temperatur geändert werden soll.
-      selector:
-        time:
-
-    temperatur_anwesenheit:
-      name: Temperatur bei Anwesenheit
-      description: Die Temperatur, die bei Anwesenheit zu den festgelegten Zeitpunkten gesetzt werden soll.
+    temperatur1:
+      name: Temperatur 1
+      description: Individuelle Temperatur für Zeitpunkt 1
       selector:
         number:
-          min: 0
-          max: 30
+          min: 5
+          max: 40
           step: 0.5
-          unit_of_measurement: "°C"
-
+    zeit2:
+      name: Zeit 2
+      description: Zeitpunkt, zu dem eine individuelle Temperatur gesetzt werden soll
+      selector:
+        time:
+    temperatur2:
+      name: Temperatur 2
+      description: Individuelle Temperatur für Zeitpunkt 2
+      selector:
+        number:
+          min: 5
+          max: 40
+          step: 0.5
+    zeit3:
+      name: Zeit 3
+      description: Zeitpunkt, zu dem eine individuelle Temperatur gesetzt werden soll
+      selector:
+        time:
+    temperatur3:
+      name: Temperatur 3
+      description: Individuelle Temperatur für Zeitpunkt 3
+      selector:
+        number:
+          min: 5
+          max: 40
+          step: 0.5
+    zeit4:
+      name: Zeit 4
+      description: Zeitpunkt, zu dem eine individuelle Temperatur gesetzt werden soll
+      selector:
+        time:
+    temperatur4:
+      name: Temperatur 4
+      description: Individuelle Temperatur für Zeitpunkt 4
+      selector:
+        number:
+          min: 5
+          max: 40
+          step: 0.5
     temperatur_abwesenheit:
       name: Temperatur bei Abwesenheit
-      description: Die Temperatur, die bei Abwesenheit gesetzt werden soll.
+      description: Temperatur, die gesetzt wird, wenn niemand zu Hause ist
       selector:
         number:
-          min: 0
-          max: 30
+          min: 5
+          max: 40
           step: 0.5
-          unit_of_measurement: "°C"
+          
+    automation:
+  - alias: Thermostat-Steuerung
+    trigger:
+      platform: state
+      entity_id: input_boolean.{{ states('input_boolean.anwesenheitstracker') }}
+      to: 'on'
+    condition:
+      - condition: time
+        after: 'Input_Zeit1'
+        before: 'Input_Zeit2'
+    action:
+      - service: climate.set_temperature
+        data_template:
+          entity_id: climate.thermostat
+          temperature: '{{ states('input_number.individual_temperature_1') }}'
 
-  trigger:
-    platform: state
-    entity_id: !input 'anwesenheitstracker'
-    from: 'not_home'
-    to: 'home'
-    
-  action:
-  - choose:
-      # Anwesenheit
-      - conditions:
-          - condition: state
-            entity_id: !input anwesenheitstracker
-            state: "home"
-        sequence:
-          - choose:
-              # Temperatur Zeit 1
-              - conditions:
-                  - condition: time
-                    after: !input temperatur_zeit1
-                    before: !input temperatur_zeit2
-                sequence:
-                  - service: climate.set_temperature
-                    target:
-                      entity_id: !input climate_entity_id
-                    data:
-                      temperature: !input temperatur_zeit1_temp
-              # Temperatur Zeit 2
-              - conditions:
-                  - condition: time
-                    after: !input temperatur_zeit2
-                    before: !input temperatur_zeit3
-                sequence:
-                  - service: climate.set_temperature
-                    target:
-                      entity_id: !input climate_entity_id
-                    data:
-                      temperature: !input temperatur_zeit2_temp
-              # Temperatur Zeit 3
-              - conditions:
-                  - condition: time
-                    after: !input temperatur_zeit3
-                    before: !input temperatur_zeit4
-                sequence:
-                  - service: climate.set_temperature
-                    target:
-                      entity_id: !input climate_entity_id
-                    data:
-                      temperature: !input temperatur_zeit3_temp
-              # Temperatur Zeit 4
-              - conditions:
-                  - condition: time
-                    after: !input temperatur_zeit4
-                sequence:
-                  - service: climate.set_temperature
-                    target:
-                      entity_id: !input climate_entity_id
-                    data:
-                      temperature: !input temperatur_zeit4_temp
-          # Abwesenheit
-          - sequence:
-              - service: climate.set_temperature
-                target:
-                  entity_id: !input climate_entity_id
-                data:
-                  temperature: !input temperatur_abwesenheit
+  - alias: Thermostat-Steuerung bei Abwesenheit
+    trigger:
+      platform: state
+      entity_id: input_boolean.{{ states('input_boolean.anwesenheitstracker') }}
+      to: 'off'
+    action:
+      - service: climate.set_temperature
+        data_template:
+          entity_id: climate.thermostat
+          temperature: '{{ states('input_number.individual_temperature_abwesenheit') }}'
+   
