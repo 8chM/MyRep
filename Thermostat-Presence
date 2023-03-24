@@ -1,87 +1,86 @@
 blueprint:
-  name: Thermostat-Steuerung
-  description: Steuert das Thermostat basierend auf Anwesenheit und Temperaturvorgaben
-  domain: automation
+  name: Thermostatsteuerung mit Anwesenheitserkennung
+  description: Automatische Steuerung des Thermostats auf Basis der Anwesenheit von Personen
+
   input:
     thermostat_entity:
       name: Thermostat
-      description: Das zu steuernde Thermostat
+      description: Das Thermostat, das gesteuert werden soll
       selector:
         entity:
           domain: climate
     presence_entity:
-      name: Präsenz-Entity
-      description: Die Entity, die den Anwesenheitsstatus des Benutzers anzeigt
+      name: Präsenz-Tracker
+      description: Der Tracker für Anwesenheitserkennung
       selector:
         entity:
           domain: device_tracker
-    temperature_home:
-      name: Temperatur zuhause
-      description: Die Temperatur, die eingestellt wird, wenn der Benutzer anwesend ist
-      selector:
-        number:
-          min: 5
-          max: 35
-          step: 0.1
-          unit_of_measurement: "°C"
-    temperature_away:
-      name: Temperatur abwesend
-      description: Die Temperatur, die eingestellt wird, wenn der Benutzer abwesend ist
-      selector:
-        number:
-          min: 5
-          max: 35
-          step: 0.1
-          unit_of_measurement: "°C"
-    time_home_1:
-      name: Zeit 1 zuhause
-      description: Die erste Zeit, zu der der Benutzer anwesend ist
-      selector:
-        time: {}
-    temperature_home_1:
-      name: Temperatur 1 zuhause
-      description: Die Temperatur, die eingestellt wird, wenn der Benutzer zu Zeit 1 anwesend ist
-      selector:
-        number:
-          min: 5
-          max: 35
-          step: 0.1
-          unit_of_measurement: "°C"
-    time_home_2:
-      name: Zeit 2 zuhause
-      description: Die zweite Zeit, zu der der Benutzer anwesend ist
-      selector:
-        time: {}
-    temperature_home_2:
-      name: Temperatur 2 zuhause
-      description: Die Temperatur, die eingestellt wird, wenn der Benutzer zu Zeit 2 anwesend ist
-      selector:
-        number:
-          min: 5
-          max: 35
-          step: 0.1
-          unit_of_measurement: "°C"
-    time_home_3:
-      name: Zeit 3 zuhause
-      description: Die dritte Zeit, zu der der Benutzer anwesend ist
-      selector:
-        time: {}
-    temperature_home_3:
-      name: Temperatur 3 zuhause
-      description: Die Temperatur, die eingestellt wird, wenn der Benutzer zu Zeit 3 anwesend ist
-      selector:
-        number:
-          min: 5
-          max: 35
-          step: 0.1
-          unit_of_measurement: "°C"
-    presence_check_entity:
-      name: Präsenz-Check-Entity
-      description: Die Entity, die überprüft, ob der Benutzer anwesend ist, wenn keine Präsenz-Updates empfangen werden
-      default: "input_boolean.thermostat_presence_check"
+    anwesenheit_1:
+      name: Anwesenheit 1
+      description: Zeit und Temperatur für Anwesenheit 1
       selector:
         entity:
-          domain: input_boolean
-    max_temp_home:
-      name: Maximale Temperatur zuhause
-      description: Die maximale Temperatur, die eingestellt wird, wenn der Benutzer anwesend ist
+          domain: input_datetime
+    anwesenheit_2:
+      name: Anwesenheit 2
+      description: Zeit und Temperatur für Anwesenheit 2
+      selector:
+        entity:
+          domain: input_datetime
+    anwesenheit_3:
+      name: Anwesenheit 3
+      description: Zeit und Temperatur für Anwesenheit 3
+      selector:
+        entity:
+          domain: input_datetime
+
+  trigger:
+    platform: state
+    entity_id: !input 'presence_entity'
+  condition:
+    condition: state
+    entity_id: !input 'presence_entity'
+    state: 'home'
+  action:
+    - choose:
+        - conditions:
+            - condition: time
+              after: !input 'anwesenheit_1'
+              before: !input 'anwesenheit_2'
+          sequence:
+            - service: climate.set_temperature
+              target:
+                entity_id: !input 'thermostat_entity'
+              data:
+                temperature: '{{ states("input_number.thermostat_temperature_anwesenheit") }}'
+        - conditions:
+            - condition: time
+              after: !input 'anwesenheit_2'
+              before: !input 'anwesenheit_3'
+          sequence:
+            - service: climate.set_temperature
+              target:
+                entity_id: !input 'thermostat_entity'
+              data:
+                temperature: '{{ states("input_number.thermostat_temperature_anwesenheit") }}'
+        - conditions:
+            - condition: time
+              after: !input 'anwesenheit_3'
+          sequence:
+            - service: climate.set_temperature
+              target:
+                entity_id: !input 'thermostat_entity'
+              data:
+                temperature: '{{ states("input_number.thermostat_temperature_anwesenheit") }}'
+        - conditions:
+            - condition: not
+              conditions:
+                - condition: state
+                  entity_id: !input 'presence_entity'
+                  state: 'home'
+          sequence:
+            - service: climate.set_temperature
+              target:
+                entity_id: !input 'thermostat_entity'
+              data:
+                temperature: '{{ states("input_number.thermostat_temperature_abwesenheit") }}'
